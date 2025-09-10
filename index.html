@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Irrigation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #34495e;
+            --text: #2c3e50;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 1.2rem;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .logo {
+            font-size: 2.2rem;
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 25px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .status-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+        }
+        
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .status-icon {
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+        
+        .soil-icon { color: #8B4513; }
+        .humidity-icon { color: #3498db; }
+        .temp-icon { color: #e74c3c; }
+        .air-icon { color: #9b59b6; }
+        
+        .status-card h3 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+        
+        .status-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .status-unit {
+            font-size: 1rem;
+            color: #7f8c8d;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+        }
+        
+        .chart-container:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+        
+        .chart-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+        
+        .chart-title i {
+            font-size: 1.4rem;
+        }
+        
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+        
+        .panel-title i {
+            font-size: 1.5rem;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .switch-card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: var(--transition);
+        }
+        
+        .switch-card:hover {
+            background: #dfe6e9;
+        }
+        
+        .switch-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+        
+        /* Toggle Switch Styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 100px;
+            height: 50px;
+            margin-bottom: 15px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 40px;
+            width: 40px;
+            left: 5px;
+            bottom: 5px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(50px);
+        }
+        
+        .status-indicator {
+            font-weight: bold;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .status-off {
+            color: var(--accent);
+        }
+        
+        .status-on {
+            color: var(--success);
+        }
+        
+        .system-status {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .status-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-value {
+            font-weight: 600;
+        }
+        
+        .online {
+            color: var(--success);
+        }
+        
+        .offline {
+            color: var(--accent);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .status-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px 10px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .status-bar {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .status-card, .chart-container, .control-panel, .system-status {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-tint"></i>
+            </div>
+            <div>
+                <h1>Smart Irrigation System</h1>
+                <p class="subtitle">Real-time Monitoring and Control Dashboard</p>
+            </div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="main-content">
+                <div class="status-bar">
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-soil soil-icon"></i>
+                        </div>
+                        <h3>SOIL MOISTURE</h3>
+                        <div class="status-value" id="soilMoistureValue">--</div>
+                        <div class="status-unit">Percentage (%)</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-cloud-rain humidity-icon"></i>
+                        </div>
+                        <h3>AIR HUMIDITY</h3>
+                        <div class="status-value" id="airHumidityValue">--</div>
+                        <div class="status-unit">Percentage (%)</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-thermometer-half temp-icon"></i>
+                        </div>
+                        <h3>TEMPERATURE</h3>
+                        <div class="status-value" id="temperatureValue">--</div>
+                        <div class="status-unit">Celsius (°C)</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="status-icon">
+                            <i class="fas fa-wind air-icon"></i>
+                        </div>
+                        <h3>AIR QUALITY</h3>
+                        <div class="status-value" id="airQualityValue">--</div>
+                        <div class="status-unit">PPM</div>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <i class="fas fa-soil soil-icon"></i>
+                            <span>Soil Moisture Over Time</span>
+                        </div>
+                        <canvas id="soilMoistureChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <i class="fas fa-cloud-rain humidity-icon"></i>
+                            <span>Air Humidity Over Time</span>
+                        </div>
+                        <canvas id="airHumidityChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <i class="fas fa-thermometer-half temp-icon"></i>
+                            <span>Temperature Over Time</span>
+                        </div>
+                        <canvas id="temperatureChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">
+                            <i class="fas fa-wind air-icon"></i>
+                            <span>Air Quality Over Time</span>
+                        </div>
+                        <canvas id="airQualityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar">
+                <div class="control-panel">
+                    <div class="panel-title">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Device Control</span>
+                    </div>
+                    <div class="controls">
+                        <div class="switch-card">
+                            <div class="switch-title">
+                                <i class="fas fa-faucet"></i>
+                                <span>Water Valve</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="valveSwitch">
+                                <span class="slider"></span>
+                            </label>
+                            <div class="status-indicator">
+                                <i class="fas fa-circle"></i>
+                                <span id="valveStatus">OFF</span>
+                            </div>
+                        </div>
+                        
+                        <div class="switch-card">
+                            <div class="switch-title">
+                                <i class="fas fa-pump"></i>
+                                <span>Pump Motor</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="pumpSwitch">
+                                <span class="slider"></span>
+                            </label>
+                            <div class="status-indicator">
+                                <i class="fas fa-circle"></i>
+                                <span id="pumpStatus">OFF</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="system-status">
+                    <div class="panel-title">
+                        <i class="fas fa-info-circle"></i>
+                        <span>System Status</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">
+                            <i class="fas fa-satellite-dish"></i>
+                            <span>Connection Status</span>
+                        </div>
+                        <div class="status-value online">Connected</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">
+                            <i class="fas fa-clock"></i>
+                            <span>Last Update</span>
+                        </div>
+                        <div class="status-value" id="lastUpdate">--</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">
+                            <i class="fas fa-microchip"></i>
+                            <span>System Mode</span>
+                        </div>
+                        <div class="status-value">Auto</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">
+                            <i class="fas fa-battery-full"></i>
+                            <span>Power Status</span>
+                        </div>
+                        <div class="status-value">Solar (87%)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Smart Irrigation System &copy; 2023 | Real-time Monitoring and Control</p>
+        </footer>
+    </div>
+
+    <script>
+        // Firebase configuration - REPLACE WITH YOUR ACTUAL CONFIG
+        const firebaseConfig = {
+  apiKey: "AIzaSyCcreN4Uz_HtzX4hUjwCgOvaenCTfku_K8",
+  authDomain: "smartirrigation-8fa68.firebaseapp.com",
+  databaseURL: "https://smartirrigation-8fa68-default-rtdb.firebaseio.com",
+  projectId: "smartirrigation-8fa68",
+  storageBucket: "smartirrigation-8fa68.firebasestorage.app",
+  messagingSenderId: "900762993037",
+  appId: "1:900762993037:web:a5a73e776577813917fdc4",
+  measurementId: "G-NHH7LQKST4"
+};
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        
+        // Chart variables
+        let soilMoistureChart, airHumidityChart, temperatureChart, airQualityChart;
+        const maxDataPoints = 20;
+        const timestamps = [];
+        const soilMoistureData = [];
+        const airHumidityData = [];
+        const temperatureData = [];
+        const airQualityData = [];
+        
+        // Initialize charts with improved styling
+        function initializeCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        reverse: true,
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                elements: {
+                    point: {
+                        radius: 0,
+                        hoverRadius: 6
+                    }
+                },
+                animation: {
+                    duration: 0
+                }
+            };
+            
+            // Soil Moisture Chart
+            const soilCtx = document.getElementById('soilMoistureChart').getContext('2d');
+            soilMoistureChart = new Chart(soilCtx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'Soil Moisture %',
+                        data: soilMoistureData,
+                        borderColor: 'rgba(139, 69, 19, 1)',
+                        backgroundColor: 'rgba(139, 69, 19, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            // Air Humidity Chart
+            const humidityCtx = document.getElementById('airHumidityChart').getContext('2d');
+            airHumidityChart = new Chart(humidityCtx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'Air Humidity %',
+                        data: airHumidityData,
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            // Temperature Chart
+            const tempCtx = document.getElementById('temperatureChart').getContext('2d');
+            temperatureChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'Temperature °C',
+                        data: temperatureData,
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: chartOptions
+            });
+            
+            // Air Quality Chart
+            const airCtx = document.getElementById('airQualityChart').getContext('2d');
+            airQualityChart = new Chart(airCtx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'Air Quality PPM',
+                        data: airQualityData,
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: chartOptions
+            });
+        }
+        
+        // Update charts with new data
+        function updateCharts(data, timestamp) {
+            // Format timestamp for display
+            const time = new Date(timestamp).toLocaleTimeString();
+            
+            // Add new timestamp if we haven't reached max data points
+            if (timestamps.length >= maxDataPoints) {
+                timestamps.shift();
+                soilMoistureData.shift();
+                airHumidityData.shift();
+                temperatureData.shift();
+                airQualityData.shift();
+            }
+            
+            timestamps.push(time);
+            soilMoistureData.push(data.soilMoisture);
+            airHumidityData.push(data.airHumidity);
+            temperatureData.push(data.temperature);
+            airQualityData.push(data.airQuality);
+            
+            // Update charts
+            soilMoistureChart.update();
+            airHumidityChart.update();
+            temperatureChart.update();
+            airQualityChart.update();
+            
+            // Update current value displays
+            document.getElementById('soilMoistureValue').textContent = data.soilMoisture;
+            document.getElementById('airHumidityValue').textContent = data.airHumidity;
+            document.getElementById('temperatureValue').textContent = data.temperature;
+            document.getElementById('airQualityValue').textContent = data.airQuality;
+            
+            // Update last update time
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Set up Firebase listeners
+        function setupFirebaseListeners() {
+            // Listen for sensor data changes
+            const sensorDataRef = database.ref('sensorData');
+            sensorDataRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    updateCharts(data, Date.now());
+                }
+            });
+            
+            // Listen for valve state changes
+            const valveRef = database.ref('controlState/valve');
+            valveRef.on('value', (snapshot) => {
+                const valveState = snapshot.val();
+                document.getElementById('valveSwitch').checked = valveState;
+                document.getElementById('valveStatus').textContent = valveState ? 'ON' : 'OFF';
+                document.getElementById('valveStatus').className = valveState ? 'status-on' : 'status-off';
+                document.querySelector('#valveStatus').previousElementSibling.className = valveState ? 
+                    'fas fa-circle status-on' : 'fas fa-circle status-off';
+            });
+            
+            // Listen for pump state changes
+            const pumpRef = database.ref('controlState/pump');
+            pumpRef.on('value', (snapshot) => {
+                const pumpState = snapshot.val();
+                document.getElementById('pumpSwitch').checked = pumpState;
+                document.getElementById('pumpStatus').textContent = pumpState ? 'ON' : 'OFF';
+                document.getElementById('pumpStatus').className = pumpState ? 'status-on' : 'status-off';
+                document.querySelector('#pumpStatus').previousElementSibling.className = pumpState ? 
+                    'fas fa-circle status-on' : 'fas fa-circle status-off';
+            });
+        }
+        
+        // Set up switch event handlers
+        function setupSwitchHandlers() {
+            // Valve switch handler
+            document.getElementById('valveSwitch').addEventListener('change', (e) => {
+                const valveState = e.target.checked;
+                database.ref('controlState/valve').set(valveState);
+            });
+            
+            // Pump switch handler
+            document.getElementById('pumpSwitch').addEventListener('change', (e) => {
+                const pumpState = e.target.checked;
+                database.ref('controlState/pump').set(pumpState);
+            });
+        }
+        
+        // Initialize the application
+        function initApp() {
+            initializeCharts();
+            setupFirebaseListeners();
+            setupSwitchHandlers();
+            
+            // Set initial last update time
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Start the application when the page loads
+        window.addEventListener('load', initApp);
+    </script>
+</body>
+</html>
