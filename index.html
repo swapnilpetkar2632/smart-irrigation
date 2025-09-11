@@ -215,7 +215,7 @@
             font-size: 1.1rem;
         }
         
-        /* Toggle Switch Styles */
+        /* Enhanced Toggle Switch Styles */
         .switch {
             position: relative;
             display: inline-block;
@@ -240,6 +240,7 @@
             background-color: #ccc;
             transition: .4s;
             border-radius: 34px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
         }
         
         .slider:before {
@@ -252,6 +253,7 @@
             background-color: white;
             transition: .4s;
             border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
         
         input:checked + .slider {
@@ -269,6 +271,7 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
+            margin-top: 10px;
         }
         
         .status-off {
@@ -279,39 +282,29 @@
             color: var(--success);
         }
         
-        .system-status {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
+        .last-updated {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 5px;
         }
         
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .status-item:last-child {
-            border-bottom: none;
-        }
-        
-        .status-label {
+        .connection-status {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+            padding: 8px;
+            border-radius: 20px;
+            background-color: var(--light);
+            font-size: 0.9rem;
         }
         
-        .status-value {
-            font-weight: 600;
-        }
-        
-        .online {
+        .connected {
             color: var(--success);
         }
         
-        .offline {
+        .disconnected {
             color: var(--accent);
         }
         
@@ -358,7 +351,7 @@
                 padding: 15px;
             }
             
-            .status-card, .chart-container, .control-panel, .system-status {
+            .status-card, .chart-container, .control-panel {
                 padding: 15px;
             }
         }
@@ -462,9 +455,10 @@
                                 <span class="slider"></span>
                             </label>
                             <div class="status-indicator">
-                                <i class="fas fa-circle"></i>
+                                <i class="fas fa-circle" id="valveIcon"></i>
                                 <span id="valveStatus">OFF</span>
                             </div>
+                            <div class="last-updated" id="valveUpdateTime">Last update: --</div>
                         </div>
                         
                         <div class="switch-card">
@@ -477,45 +471,15 @@
                                 <span class="slider"></span>
                             </label>
                             <div class="status-indicator">
-                                <i class="fas fa-circle"></i>
+                                <i class="fas fa-circle" id="pumpIcon"></i>
                                 <span id="pumpStatus">OFF</span>
                             </div>
+                            <div class="last-updated" id="pumpUpdateTime">Last update: --</div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="system-status">
-                    <div class="panel-title">
-                        <i class="fas fa-info-circle"></i>
-                        <span>System Status</span>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">
-                            <i class="fas fa-satellite-dish"></i>
-                            <span>Connection Status</span>
-                        </div>
-                        <div class="status-value online">Connected</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">
-                            <i class="fas fa-clock"></i>
-                            <span>Last Update</span>
-                        </div>
-                        <div class="status-value" id="lastUpdate">--</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">
-                            <i class="fas fa-microchip"></i>
-                            <span>System Mode</span>
-                        </div>
-                        <div class="status-value">Auto</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">
-                            <i class="fas fa-battery-full"></i>
-                            <span>Power Status</span>
-                        </div>
-                        <div class="status-value">Solar (87%)</div>
+                    <div class="connection-status">
+                        <i class="fas fa-circle connected" id="connectionIcon"></i>
+                        <span id="connectionStatus">Connected to Firebase</span>
                     </div>
                 </div>
             </div>
@@ -528,20 +492,18 @@
 
     <script>
         // Firebase configuration - REPLACE WITH YOUR ACTUAL CONFIG
-        const firebaseConfig = {
-  apiKey: "AIzaSyCcreN4Uz_HtzX4hUjwCgOvaenCTfku_K8",
-  authDomain: "smartirrigation-8fa68.firebaseapp.com",
-  databaseURL: "https://smartirrigation-8fa68-default-rtdb.firebaseio.com",
-  projectId: "smartirrigation-8fa68",
-  storageBucket: "smartirrigation-8fa68.firebasestorage.app",
-  messagingSenderId: "900762993037",
-  appId: "1:900762993037:web:a5a73e776577813917fdc4",
-  measurementId: "G-NHH7LQKST4"
+       const firebaseConfig = {
+  apiKey: "AIzaSyDP1bI_xbdM4c5pe3jLpZbIOFw50gASUqk",
+  authDomain: "irrigation-4dab0.firebaseapp.com",
+  databaseURL: "https://irrigation-4dab0-default-rtdb.firebaseio.com",
+  projectId: "irrigation-4dab0",
+  storageBucket: "irrigation-4dab0.firebasestorage.app",
+  messagingSenderId: "541729999039",
+  appId: "1:541729999039:web:0e8b58d27dc9eb83961e0a"
 };
-        
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
         
         // Chart variables
         let soilMoistureChart, airHumidityChart, temperatureChart, airQualityChart;
@@ -695,9 +657,27 @@
             document.getElementById('airHumidityValue').textContent = data.airHumidity;
             document.getElementById('temperatureValue').textContent = data.temperature;
             document.getElementById('airQualityValue').textContent = data.airQuality;
+        }
+        
+        // Update switch status with timestamp
+        function updateSwitchStatus(switchType, state) {
+            const statusElement = document.getElementById(`${switchType}Status`);
+            const iconElement = document.getElementById(`${switchType}Icon`);
+            const timeElement = document.getElementById(`${switchType}UpdateTime`);
             
-            // Update last update time
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            if (state) {
+                statusElement.textContent = 'ON';
+                statusElement.className = 'status-on';
+                iconElement.className = 'fas fa-circle status-on';
+            } else {
+                statusElement.textContent = 'OFF';
+                statusElement.className = 'status-off';
+                iconElement.className = 'fas fa-circle status-off';
+            }
+            
+            // Update timestamp
+            const now = new Date();
+            timeElement.textContent = `Last update: ${now.toLocaleTimeString()}`;
         }
         
         // Set up Firebase listeners
@@ -716,10 +696,7 @@
             valveRef.on('value', (snapshot) => {
                 const valveState = snapshot.val();
                 document.getElementById('valveSwitch').checked = valveState;
-                document.getElementById('valveStatus').textContent = valveState ? 'ON' : 'OFF';
-                document.getElementById('valveStatus').className = valveState ? 'status-on' : 'status-off';
-                document.querySelector('#valveStatus').previousElementSibling.className = valveState ? 
-                    'fas fa-circle status-on' : 'fas fa-circle status-off';
+                updateSwitchStatus('valve', valveState);
             });
             
             // Listen for pump state changes
@@ -727,10 +704,19 @@
             pumpRef.on('value', (snapshot) => {
                 const pumpState = snapshot.val();
                 document.getElementById('pumpSwitch').checked = pumpState;
-                document.getElementById('pumpStatus').textContent = pumpState ? 'ON' : 'OFF';
-                document.getElementById('pumpStatus').className = pumpState ? 'status-on' : 'status-off';
-                document.querySelector('#pumpStatus').previousElementSibling.className = pumpState ? 
-                    'fas fa-circle status-on' : 'fas fa-circle status-off';
+                updateSwitchStatus('pump', pumpState);
+            });
+            
+            // Monitor connection status
+            const connectedRef = database.ref(".info/connected");
+            connectedRef.on("value", function(snap) {
+                if (snap.val() === true) {
+                    document.getElementById('connectionStatus').textContent = "Connected to Firebase";
+                    document.getElementById('connectionIcon').className = "fas fa-circle connected";
+                } else {
+                    document.getElementById('connectionStatus').textContent = "Disconnected from Firebase";
+                    document.getElementById('connectionIcon').className = "fas fa-circle disconnected";
+                }
             });
         }
         
@@ -739,13 +725,29 @@
             // Valve switch handler
             document.getElementById('valveSwitch').addEventListener('change', (e) => {
                 const valveState = e.target.checked;
-                database.ref('controlState/valve').set(valveState);
+                database.ref('controlState/valve').set(valveState)
+                    .then(() => {
+                        console.log("Valve state updated successfully");
+                    })
+                    .catch((error) => {
+                        console.error("Error updating valve state:", error);
+                        // Revert the switch if there was an error
+                        e.target.checked = !valveState;
+                    });
             });
             
             // Pump switch handler
             document.getElementById('pumpSwitch').addEventListener('change', (e) => {
                 const pumpState = e.target.checked;
-                database.ref('controlState/pump').set(pumpState);
+                database.ref('controlState/pump').set(pumpState)
+                    .then(() => {
+                        console.log("Pump state updated successfully");
+                    })
+                    .catch((error) => {
+                        console.error("Error updating pump state:", error);
+                        // Revert the switch if there was an error
+                        e.target.checked = !pumpState;
+                    });
             });
         }
         
@@ -755,8 +757,10 @@
             setupFirebaseListeners();
             setupSwitchHandlers();
             
-            // Set initial last update time
-            document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+            // Set initial update times
+            const now = new Date();
+            document.getElementById('valveUpdateTime').textContent = `Last update: ${now.toLocaleTimeString()}`;
+            document.getElementById('pumpUpdateTime').textContent = `Last update: ${now.toLocaleTimeString()}`;
         }
         
         // Start the application when the page loads
