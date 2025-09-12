@@ -486,13 +486,11 @@
         </div>
         
         <footer>
-            <p>Smart Irrigation System &copy; 2023 | Real-time Monitoring and Control</p>
-        </footer>
+            &copy; 2024 Smart Irrigation System. All rights reserved.
     </div>
 
     <script>
-        // Firebase configuration - REPLACE WITH YOUR ACTUAL CONFIG
-       const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyDP1bI_xbdM4c5pe3jLpZbIOFw50gASUqk",
   authDomain: "irrigation-4dab0.firebaseapp.com",
   databaseURL: "https://irrigation-4dab0-default-rtdb.firebaseio.com",
@@ -501,9 +499,15 @@
   messagingSenderId: "541729999039",
   appId: "1:541729999039:web:0e8b58d27dc9eb83961e0a"
 };
+       
+      // Initialize Firebase (Compat SDK)
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+        
+       
+
+
         
         // Chart variables
         let soilMoistureChart, airHumidityChart, temperatureChart, airQualityChart;
