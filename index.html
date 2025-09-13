@@ -646,7 +646,7 @@ const database = firebase.database();
             
             timestamps.push(time);
             soilMoistureData.push(data.soilMoisture);
-            airHumidityData.push(data.airHumidity);
+            airHumidityData.push(data.humidity);
             temperatureData.push(data.temperature);
             airQualityData.push(data.airQuality);
             
@@ -658,7 +658,7 @@ const database = firebase.database();
             
             // Update current value displays
             document.getElementById('soilMoistureValue').textContent = data.soilMoisture;
-            document.getElementById('airHumidityValue').textContent = data.airHumidity;
+            document.getElementById('airHumidityValue').textContent = data.humidity;
             document.getElementById('temperatureValue').textContent = data.temperature;
             document.getElementById('airQualityValue').textContent = data.airQuality;
         }
@@ -687,7 +687,7 @@ const database = firebase.database();
         // Set up Firebase listeners
         function setupFirebaseListeners() {
             // Listen for sensor data changes
-            const sensorDataRef = database.ref('sensorData');
+            const sensorDataRef = database.ref('sensors');
             sensorDataRef.on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
